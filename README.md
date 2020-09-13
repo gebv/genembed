@@ -4,11 +4,12 @@ Embed resource files into your code via `go generate` command.
 
 This is an **example** of embedding files via `go generate ...` command in your exists code. No binaries used. Generating with a bash script [embed.sh](embed.sh)
 
+**NOTE: Please be mindful. Check what files you embed. The content of these files will be available from your code.**
 
 # Quickstart
 
 1. Add a comment `go:generate ...` to your code for each file.
-Follow example code
+Follow example code ([see more](example))
 ```go
 ...
 package main
