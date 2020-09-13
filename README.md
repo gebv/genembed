@@ -22,9 +22,9 @@ func main() {
 	log.Println(string(getLocalFile("not exists file")))
 }
 
-//go:generate ../embed.sh file1
+//go:generate $EMBEDBIN file1
 
-//go:generate ../embed.sh file2
+//go:generate $EMBEDBIN file2
 
 ```
 
@@ -32,7 +32,7 @@ func main() {
 
 ```bash
 find ./* -name '*_embeded.go' -print0 | xargs -0 rm
-go generate ./...
+EMBEDBIN=${PWD}/../embed.sh go generate ./...
 find ./* -name '*_embeded.go.tmp' -print0 | xargs -0 rm
 find ./* -name '*_embeded.go' -exec gofmt -w {} +
 ```
