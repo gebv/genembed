@@ -37,7 +37,7 @@ find ./* -name '*_embeded.go.tmp' -print0 | xargs -0 rm
 find ./* -name '*_embeded.go' -exec gofmt -w {} +
 ```
 
-3. The original code has the expected content. Why? Because in the same package the file was created. Below is an example the generated file (by pattern `<packagename>_embeded.go`).
+3. Now we can get data for embeded files (via local private method `getLocalFile`). In the same package the file was created with content of embeded files. Below is an example the generated file (filename by pattern `<packagename>_embeded.go`).
 
 ```go
 // Code generated  DO NOT EDIT.
