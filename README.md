@@ -2,7 +2,9 @@
 
 Embed resource files into your code via `go generate` command.
 
-This is an **example** of embedding files via `go generate ...` command in your exists code. Generating with a bash script [embed.sh](embed.sh). Used `hexdump` for  transformation file content in the form of byte array.
+This is an **example** of embedding files via `go generate ...` command in your exists code. Generating with a bash script [embed.sh](embed.sh). Used `hexdump` for  transformation file content in the form of byte array. 
+
+This is a very simple solution to add the content of your files on the `map[string][]byte`.
 
 **NOTE: Please be mindful. Check what files you embed. The content of these files will be available from your code.**
 
