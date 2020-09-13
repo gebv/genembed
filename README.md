@@ -2,7 +2,9 @@
 
 Embed resource files into your code via `go generate` command.
 
-This is an **example** of embedding files via `go generate ...` command in your exists code. Generating with a bash script [embed.sh](embed.sh). Used `hexdump` for  transformation file content in the form of byte array.
+This is an **example** of embedding files via `go generate ...` command in your exists code. Generating with a bash script [embed.sh](embed.sh). Used `hexdump` for  transformation file content in the form of byte array. 
+
+This is a very simple solution to add the content of your files on the `map[string][]byte`. With a minimum of settings.
 
 **NOTE: Please be mindful. Check what files you embed. The content of these files will be available from your code.**
 
@@ -37,7 +39,7 @@ find ./* -name '*_embeded.go.tmp' -print0 | xargs -0 rm
 find ./* -name '*_embeded.go' -exec gofmt -w {} +
 ```
 
-3. The original code has the expected content. Why? Because in the same package the file was created. Below is an example the generated file (by pattern `<packagename>_embeded.go`).
+3. Now we can get data for embeded files (via local private method `getLocalFile`). In the same package the file was created with content of embeded files. Below is an example the generated file (filename by pattern `<packagename>_embeded.go`).
 
 ```go
 // Code generated  DO NOT EDIT.
