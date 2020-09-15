@@ -50,6 +50,6 @@ jobs:
     - name: Check code changes
       working-directory: ${{ env.WORKDIR }}
       run: |
-        pwd && go mod tidy && git checkout go.sum
+        go mod tidy
         git status
         git diff --exit-code
