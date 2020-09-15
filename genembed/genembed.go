@@ -12,7 +12,6 @@ import (
 	"text/template"
 
 	"github.com/gebv/genembed/file"
-	"github.com/pkg/errors"
 )
 
 func main() {
@@ -110,7 +109,7 @@ func prepareDstFile(filename string, cfg embededFileConfig) error {
 	if isNew {
 		err := embededFileTpl.Execute(f, cfg)
 		if err != nil {
-			return errors.Wrapf(err, "failed write tpl to file %q", filename)
+			return fmt.Errorf("failed write tpl to file: %v", err)
 		}
 	}
 	return nil
