@@ -92,7 +92,7 @@ func TestEndToEndCases(t *testing.T) {
 
 	for _, test := range endToEndCases {
 		t.Run(test.name, func(t *testing.T) {
-			dir, err := ioutil.TempDir("", "go-embed")
+			dir, err := ioutil.TempDir("", "genembed")
 			if err != nil {
 				t.Error(err)
 			}

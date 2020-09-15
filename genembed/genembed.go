@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"text/template"
 
-	"github.com/gebv/go-embed/file"
+	"github.com/gebv/genembed/file"
 	"github.com/pkg/errors"
 )
 

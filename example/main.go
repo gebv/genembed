@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/gebv/go-embed/example/somepkg"
+	"github.com/gebv/genembed/example/somepkg"
 )
 
 func main() {
