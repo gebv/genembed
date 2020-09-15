@@ -9,8 +9,13 @@ import (
 )
 
 func TestWriteBefore(t *testing.T) {
-	file := filepath.Join("testdata", "f1")
-	defer os.RemoveAll(file)
+	dir, err := ioutil.TempDir("", "genembed")
+	if err != nil {
+		t.Error(err)
+	}
+
+	file := filepath.Join(dir, "f1")
+	defer os.RemoveAll(dir)
 
 	t.Run("replaceLarge", func(t *testing.T) {
 		prepareFile(t, file, "2")
@@ -85,8 +90,13 @@ func TestWriteBefore(t *testing.T) {
 }
 
 func TestWriteAfter(t *testing.T) {
-	file := filepath.Join("testdata", "f1")
-	defer os.RemoveAll(file)
+	dir, err := ioutil.TempDir("", "genembed")
+	if err != nil {
+		t.Error(err)
+	}
+
+	file := filepath.Join(dir, "f1")
+	defer os.RemoveAll(dir)
 
 	t.Run("replaceLarge", func(t *testing.T) {
 		prepareFile(t, file, "2")
