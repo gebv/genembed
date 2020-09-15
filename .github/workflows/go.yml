@@ -27,8 +27,16 @@ jobs:
         go-version: ${{ matrix.go-version }}
       id: go
 
+    - name: Set environment variables
+      run: |
+        echo "::set-env name=GOPATH::$GITHUB_WORKSPACE/go"
+        echo "::add-path::$GITHUB_WORKSPACE/go/bin"
+        echo "::set-env name=WORKDIR::$GITHUB_WORKSPACE/go/src/github.com/gebv/genembed"
+
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
+      with:
+        path: ${{ env.WORKDIR }}
 
     # - name: Lint
     #   uses: golangci/golangci-lint-action@v2
@@ -36,9 +44,11 @@ jobs:
     #     version: v1.29
 
     - name: Test
+      working-directory: ${{ env.WORKDIR }}
       run: make test
 
     - name: Check code changes
+      working-directory: ${{ env.WORKDIR }}
       run: |
         pwd && go mod tidy && git checkout go.sum
         git status
