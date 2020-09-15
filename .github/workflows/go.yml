@@ -29,15 +29,15 @@ jobs:
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
-      
-    - name: Lint
-      uses: golangci/golangci-lint-action@v2
-      with:
-        version: v1.29
+
+    # - name: Lint
+    #   uses: golangci/golangci-lint-action@v2
+    #   with:
+    #     version: v1.29
 
     - name: Test
       run: make test
-    
+
     - name: Check code changes
       run: |
         pwd && go mod tidy && git checkout go.sum
