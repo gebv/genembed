@@ -1,8 +1,8 @@
-gen:
-	find ./* -name '*_embeded.go' -print0 | xargs -0 rm
-	EMBEDBIN=${PWD}/../embed.sh go generate ./...
-	find ./* -name '*_embeded.go.tmp' -print0 | xargs -0 rm
-	find ./* -name '*_embeded.go' -exec gofmt -w {} +
+prepare:
+	go build -o genembed ../genembed/genembed.go
+gen: prepare
+	find ./* -name '*_genembed.go' -print0 | xargs -0 rm
+	PATH=${PATH}:${PWD} go generate ./...
 
 run:
-	go run main.go main_embeded.go
+	go run main.go main_genembed.go
