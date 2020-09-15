@@ -7,12 +7,10 @@ import (
 )
 
 func main() {
-	log.Println("file1", string(getLocalFile("file1")))
-	log.Println("file2", string(getLocalFile("file2")))
-	log.Println("not exists", string(getLocalFile("not exists")))
-	log.Println("file from pkg", somepkg.Value())
+	log.Println("file1", string(EmbedFiles["file1"]))
+	log.Println("file2", string(EmbedFiles["file2"]))
+	log.Println("not exists", string(EmbedFiles["not exists"]))
+	log.Println("file from pkg", string(somepkg.EmbedFiles["somefile"]))
 }
 
-//go:generate $EMBEDBIN file1
-
-//go:generate $EMBEDBIN file2
+//go:generate genembed EmbedFiles file1 file2
