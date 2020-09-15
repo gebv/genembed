@@ -96,7 +96,7 @@ func TestEndToEndCases(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			// defer os.RemoveAll(dir)
+			defer os.RemoveAll(dir)
 
 			for _, file := range test.files {
 				var buf bytes.Buffer
