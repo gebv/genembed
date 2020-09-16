@@ -6,9 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 	"text/template"
+
+	"github.com/stretchr/testify/require"
 )
 
 var endToEndCases = []struct {
@@ -75,27 +76,23 @@ func TestEndToEndCases(t *testing.T) {
 		t.Helper()
 
 		absFile := filepath.Join(dir, file)
-		if err := os.MkdirAll(filepath.Dir(absFile), 0700); err != nil {
-			t.Error("failed create dir on the fly")
-		}
-		err := ioutil.WriteFile(absFile, []byte(dat), 0666)
-		if err != nil {
-			t.Error(err, "failed write data to file", file)
-		}
+		err := os.MkdirAll(filepath.Dir(absFile), 0700)
+		require.NoError(t, err, "failed create dir on the fly")
+
+		err = ioutil.WriteFile(absFile, []byte(dat), 0666)
+		require.NoError(t, err, "failed write data to file")
+
 		return absFile
 	}
 
 	out, err := runBin(".", "go", "build", "-o", "../bin/genembed", "../genembed/genembed.go")
-	if err != nil {
-		t.Errorf("failed build genembed application err=%v, out=%s", err, out)
-	}
+	require.NoError(t, err, "failed build genembed application err=%v, out=%s", err, out)
 
 	for _, test := range endToEndCases {
 		t.Run(test.name, func(t *testing.T) {
 			dir, err := ioutil.TempDir("", "genembed")
-			if err != nil {
-				t.Error(err)
-			}
+			require.NoError(t, err, "failed create temporary dir")
+
 			defer os.RemoveAll(dir)
 
 			for _, file := range test.files {
@@ -108,9 +105,9 @@ func TestEndToEndCases(t *testing.T) {
 				default:
 					_, err = buf.WriteString(file.Code)
 				}
-				if err != nil {
-					t.Error("failed write to file (or execute tpl)", err)
-				}
+
+				require.NoError(t, err, "failed write to file (or execute tpl)")
+
 				writeFile(t, dir, file.Name, buf.String())
 			}
 
@@ -120,19 +117,22 @@ func TestEndToEndCases(t *testing.T) {
 			if test.wantGenErr != (err != nil) {
 				t.Errorf("go generate error=%v, wantErr=%v, out=%q", err, test.wantGenErr, out)
 			}
-			if !strings.Contains(out, test.wantGenOut) || (test.wantGenOut == "" && out != "") {
-				t.Errorf("not contains gen our, got=%q, substr=%q", out, test.wantGenOut)
+			if test.wantGenOut == "" {
+				require.Empty(t, out)
+			} else {
+				require.Contains(t, out, test.wantGenOut)
 			}
 
 			out, err = runBin(dir, "go", "run", ".")
 			if test.wantRunErr != (err != nil) {
 				t.Errorf("run bin error=%v, wantErr=%v, out=%q", err, test.wantRunErr, out)
 			}
-			t.Logf("run out: %q", out)
-
-			if !strings.Contains(out, test.wantRunOut) || (test.wantRunOut == "" && out != "") {
-				t.Errorf("not contains run out, got=%q, substr=%q", out, test.wantRunOut)
+			if test.wantRunOut == "" {
+				require.Empty(t, test.wantRunOut)
+			} else {
+				require.Contains(t, out, test.wantRunOut)
 			}
+
 		})
 	}
 }
