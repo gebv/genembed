@@ -9,6 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestOpenFile(t *testing.T) {
+	_, err := OpenFile("not/eixsts/path/to/file")
+	require.Error(t, err)
+	require.EqualError(t, err, "open not/eixsts/path/to/file: no such file or directory")
+}
+
 func TestWriteBefore(t *testing.T) {
 	dir, err := ioutil.TempDir("", "genembed")
 	require.NoError(t, err)
