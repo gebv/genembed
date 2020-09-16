@@ -22,6 +22,7 @@ type File struct {
 	*os.File
 }
 
+// WriteBefore writes data before the pattern if it was found in the file.
 func (f File) WriteBefore(pattern, dat []byte) (err error) {
 	if len(pattern) == 0 {
 		return ErrEmptyPattern
@@ -105,9 +106,11 @@ func (f File) lastIndex(buf []byte, pattern []byte) (pos int64, err error) {
 }
 
 var (
+	// ErrNotFoundPattern is returned when not found pattern (after or before which should be an insert) in file.
 	ErrNotFoundPattern = errors.New("not found pattern")
-	ErrFailedSeeking   = errors.New("failed seeking")
-	ErrEmptyPattern    = errors.New("empty pattern")
+
+	// ErrEmptyPattern is returned when invalid pattern.
+	ErrEmptyPattern = errors.New("empty pattern")
 )
 
 // type file interface {
