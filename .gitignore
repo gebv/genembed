@@ -3,3 +3,4 @@ bin
 bin/*
 .DS_Store
 *.cover
+example/genembed
