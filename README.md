@@ -5,6 +5,8 @@
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/gebv/genembed)](https://pkg.go.dev/github.com/gebv/genembed)
 ![Go](https://github.com/gebv/genembed/workflows/Go/badge.svg?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gebv/genembed)](https://goreportcard.com/report/github.com/gebv/genembed)
+[![codecov](https://codecov.io/gh/gebv/genembed/branch/master/graph/badge.svg)](https://codecov.io/gh/gebv/genembed)
+
 
 Embed resource files into your code via `go generate` command.
 
