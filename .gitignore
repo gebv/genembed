@@ -3,4 +3,5 @@ bin
 bin/*
 .DS_Store
 *.cover
+coverage.txt
 example/genembed
