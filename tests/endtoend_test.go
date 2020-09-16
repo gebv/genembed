@@ -40,19 +40,19 @@ var endToEndCases = []struct {
 		`, map[string]string{"EmbedFiles": "notexistsfile"}},
 			{"f1", "", `123123`, nil},
 		},
-		"failed open embeded file \"notexistsfile\"", // gen
+		"failed open embedded file \"notexistsfile\"", // gen
 		"\n",  // run
 		true,  // gen error
 		false, // run error
 	},
 	{
-		"nothingEmbeded",
+		"nothingEmbedded",
 		[]fileConfig{
 			{"main.go", "main", `//go:generate genembed EmbedFiles
 	`, map[string]string{"EmbedFiles": "notexistsfile"}},
 			{"f1", "", `123123`, nil},
 		},
-		"nothing to embeded",    // gen
+		"nothing to embedded",   // gen
 		"undefined: EmbedFiles", // run
 		true,                    // gen error
 		true,                    // run error
