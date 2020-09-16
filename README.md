@@ -1,7 +1,7 @@
 # genembed
 
 ![GitHub](https://img.shields.io/github/license/gebv/genembed)
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/gebv/genembed)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/gebv/genembed?sort=semver)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/gebv/genembed)](https://pkg.go.dev/github.com/gebv/genembed)
 ![Go](https://github.com/gebv/genembed/workflows/Go/badge.svg?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gebv/genembed)](https://goreportcard.com/report/github.com/gebv/genembed)
