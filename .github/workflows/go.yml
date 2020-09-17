@@ -38,10 +38,7 @@ jobs:
       with:
         path: ${{ env.WORKDIR }}
 
-    # - name: Lint
-    #   uses: golangci/golangci-lint-action@v2
-    #   with:
-    #     version: v1.29
+    # TODO: add linter
 
     - name: Test
       working-directory: ${{ env.WORKDIR }}
