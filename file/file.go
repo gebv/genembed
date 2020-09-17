@@ -10,12 +10,8 @@ import (
 
 // OpenFile opens and returns a file instance.
 func OpenFile(filename string) (*File, error) {
-	_, err := os.Stat(filename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, ErrNotExistsInputFile
-		}
-		return nil, err
+	if !isExistsFile(filename) {
+		return nil, ErrNotExistsInputFile
 	}
 
 	f, err := os.OpenFile(filename, syscall.O_CREAT|syscall.O_RDWR, 0666)
@@ -39,9 +35,6 @@ func (f File) size() (int64, error) {
 
 	fstat, err := f.Stat()
 	if err != nil {
-		if os.IsNotExist(err) {
-			return -1, ErrNotExistsInputFile
-		}
 		return -1, err
 	}
 	return fstat.Size(), nil
@@ -63,7 +56,7 @@ func (f File) WriteBefore(pattern, dat []byte) (err error) {
 		return err
 	}
 
-	buf := make([]byte, asize)
+	buf := make([]byte, asize) // correct buffer size for seeker
 	pos, err := lastIndex(f.File, buf, pattern)
 
 	if err != nil {
@@ -92,7 +85,7 @@ func (f File) WriteAfter(pattern, dat []byte) (err error) {
 		return err
 	}
 
-	buf := make([]byte, asize)
+	buf := make([]byte, asize) // correct buffer size for seeker
 	pos, err := lastIndex(f.File, buf, pattern)
 
 	if err != nil {
@@ -118,7 +111,8 @@ var (
 )
 
 // lastIndex returns the value of the start position of the last matched pattern.
-// If not found matched pattern returns position value -1 and error 'not found pattern'.
+// If not found matched pattern returns position value -1.
+// Buffer size must be strictly equal to the entire content size. If buffer is small and pattern is exists in content returns error ErrNotFoundPattern.
 //
 // The buffer contains the tail after the found pattern. If not found, the buffer contains a copy of the reader.
 // NOTE: seeker is dropped to os.SEEK_END. Searching from the end every time.
@@ -138,11 +132,13 @@ func lastIndex(f readAtSeeker, buf []byte, pattern []byte) (pos int64, err error
 
 		pos, err = f.Seek((int64(len(pattern))+seek)*(-1), os.SEEK_END)
 		if err != nil {
+			// NOTE: returns 'negative offset' if the offset is outside the reader
 			return -1, err
 		}
 
 		_, err := f.ReadAt(buf, pos)
 		if err != nil && err != io.EOF {
+			// NOTE: position is OK because position is taken from Seek
 			return -1, err
 		}
 
@@ -164,4 +160,9 @@ func lastIndex(f readAtSeeker, buf []byte, pattern []byte) (pos int64, err error
 type readAtSeeker interface {
 	io.Seeker
 	io.ReaderAt
+}
+
+func isExistsFile(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil || os.IsExist(err)
 }

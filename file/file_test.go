@@ -357,6 +357,32 @@ func Test_lastIndex(t *testing.T) {
 			wantPos: -1,
 			wantErr: ErrNotFoundPattern,
 		},
+
+		{
+			name:    "nilBuffer",
+			f:       strings.NewReader("123"),
+			buf:     nil,
+			pattern: []byte("2"),
+			wantPos: -1,
+			wantErr: ErrNotFoundPattern,
+		},
+
+		{
+			name:    "largerPattern", // but buffer size is correct)
+			f:       strings.NewReader("123"),
+			buf:     make([]byte, 3),
+			pattern: []byte("2222222"),
+			wantPos: -1,
+			wantErr: ErrNotFoundPattern,
+		},
+		{
+			name:    "nilPattern",
+			f:       strings.NewReader("123"),
+			buf:     make([]byte, 3),
+			pattern: nil,
+			wantPos: -1,
+			wantErr: ErrEmptyPattern,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -467,6 +493,22 @@ func TestFile_Size(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 3, size)
 	})
+
+	t.Run("closed", func(t *testing.T) {
+		file, close, remove := tmpFileWith(t, "123")
+		close()
+		defer remove()
+
+		f, err := OpenFile(file)
+		require.NoError(t, err)
+		err = f.Close()
+		require.NoError(t, err)
+
+		size, err := f.size()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "use of closed file")
+		require.EqualValues(t, -1, size)
+	})
 }
 
 func Test_NegativeCases(t *testing.T) {
@@ -479,6 +521,8 @@ func Test_NegativeCases(t *testing.T) {
 		require.Nil(t, f)
 		require.Error(t, err)
 		require.EqualError(t, err, ErrNotExistsInputFile.Error())
+
+		requireNotExistsFile(t, file)
 	})
 
 	t.Run("onFlyRemoveFile", func(t *testing.T) {
@@ -524,6 +568,134 @@ func Test_NegativeCases(t *testing.T) {
 		require.Nil(t, f)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "permission denied")
+
+		requireEqualFileContent(t, file, "123")
 	})
 
+	t.Run("closed", func(t *testing.T) {
+		file, close, remove := tmpFileWith(t, "123")
+		close()
+		defer remove()
+
+		f, err := OpenFile(file)
+		require.NotNil(t, f)
+		require.NoError(t, err)
+
+		err = f.Close()
+		require.NoError(t, err)
+
+		err = f.WriteAfter([]byte("2"), []byte("-"))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "use of closed file")
+
+		requireEqualFileContent(t, file, "123")
+	})
+
+	failCases := []struct {
+		in        readAtSeeker
+		buf       []byte
+		pattern   string
+		wantErr   bool
+		conainErr string
+	}{
+		{
+			strings.NewReader("123"),
+			nil,
+			"",
+			true,
+			ErrEmptyPattern.Error(),
+		},
+
+		{
+			strings.NewReader("123"),
+			nil,
+			"2",
+			true,
+			ErrNotFoundPattern.Error(), // because buffer is small
+		},
+		{
+			strings.NewReader("123"),
+			make([]byte, 1),
+			"2",
+			true,
+			ErrNotFoundPattern.Error(), // because buffer is small
+		},
+
+		{
+			strings.NewReader("123"),
+			make([]byte, 1), // invalid size
+			"1234",          // pattern more than content and buffer
+			true,
+			ErrNotFoundPattern.Error(),
+		},
+		{
+			strings.NewReader("123"),
+			make([]byte, 3), // ok size
+			"1234",          // pattern more than content and buffer
+			true,
+			ErrNotFoundPattern.Error(),
+		},
+		{
+			strings.NewReader("123"),
+			make([]byte, 4), // more than content but less than buf
+			"12345",
+			true,
+			ErrNotFoundPattern.Error(),
+		},
+		{
+			strings.NewReader("123"),
+			make([]byte, 5), // same size as pattern
+			"12345",
+			true,
+			"negative position", // seeker returns error
+		},
+		{
+			strings.NewReader("123"),
+			make([]byte, 8), // size is equal pattern + content
+			"12345",
+			true,
+			"negative position", // seeker returns error
+		},
+		{
+			strings.NewReader("123"),
+			make([]byte, 10), // much larger size
+			"12345",
+			true,
+			"negative position", // seeker returns error
+		},
+	}
+
+	for _, tt := range failCases {
+		t.Run(tt.pattern, func(t *testing.T) {
+			_, err := lastIndex(tt.in, tt.buf, []byte(tt.pattern))
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tt.conainErr)
+		})
+	}
+
+}
+
+func Test_isExistsFile(t *testing.T) {
+	t.Run("exists", func(t *testing.T) {
+		file, close, remove := tmpFileWith(t, "123")
+		close()
+		defer remove()
+		require.True(t, isExistsFile(file))
+	})
+	t.Run("notExists", func(t *testing.T) {
+		file, close, remove := tmpFileWith(t, "123")
+		close()
+		remove()
+		require.False(t, isExistsFile(file))
+	})
+	t.Run("perm", func(t *testing.T) {
+		file, close, remove := tmpFileWith(t, "123")
+		close()
+		defer remove()
+
+		err := os.Chmod(file, 0222)
+		require.NoError(t, err)
+
+		require.True(t, isExistsFile(file))
+	})
 }
