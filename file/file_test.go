@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -214,4 +215,158 @@ func requireEqualFileContent(t *testing.T, filename string, want string) {
 	got, err := ioutil.ReadFile(filename)
 	require.NoError(t, err)
 	require.EqualValues(t, []byte(want), got)
+}
+
+func Test_lastIndex(t *testing.T) {
+	tests := []struct {
+		name    string
+		f       readAtSeeker
+		buf     []byte
+		pattern []byte
+		wantPos int64
+		wantErr error
+	}{
+		{
+			name:    "ok",
+			f:       strings.NewReader("123"),
+			buf:     make([]byte, 3),
+			pattern: []byte("2"),
+			wantPos: 1,
+			wantErr: nil,
+		},
+		{
+			name:    "ok",
+			f:       strings.NewReader("123"),
+			buf:     make([]byte, 3),
+			pattern: []byte("1"),
+			wantPos: 0,
+			wantErr: nil,
+		},
+		{
+			name:    "ok",
+			f:       strings.NewReader("123"),
+			buf:     make([]byte, 3),
+			pattern: []byte("3"),
+			wantPos: 2,
+			wantErr: nil,
+		},
+
+		// small buffer
+		{
+			name:    "smallBuffer",
+			f:       strings.NewReader("123"),
+			buf:     make([]byte, 1),
+			pattern: []byte("2"),
+			wantPos: -1,
+			wantErr: ErrNotFoundPattern,
+		},
+		{
+			name:    "ok",
+			f:       strings.NewReader("123"),
+			buf:     make([]byte, 1),
+			pattern: []byte("1"),
+			wantPos: -1,
+			wantErr: ErrNotFoundPattern,
+		},
+		{
+			name:    "ok",
+			f:       strings.NewReader("123"),
+			buf:     make([]byte, 1),
+			pattern: []byte("3"),
+			wantPos: 2,
+			wantErr: nil,
+		},
+
+		{
+			name:    "notFound",
+			f:       strings.NewReader("123"),
+			buf:     make([]byte, 3),
+			pattern: []byte("4"),
+			wantPos: -1,
+			wantErr: ErrNotFoundPattern,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotPos, err := lastIndex(tt.f, tt.buf, tt.pattern)
+			if tt.wantErr == nil {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				require.EqualError(t, err, tt.wantErr.Error())
+			}
+			require.Equal(t, tt.wantPos, gotPos)
+		})
+	}
+}
+
+func Test_lastIndex_SpecialCases(t *testing.T) {
+	t.Run("multipleCall", func(t *testing.T) {
+		r := strings.NewReader("121212")
+		gotPos, err := lastIndex(r, make([]byte, r.Size()), []byte("2"))
+		require.NoError(t, err)
+		require.EqualValues(t, 5, gotPos)
+
+		gotPos, err = lastIndex(r, make([]byte, r.Size()), []byte("2"))
+		require.NoError(t, err)
+		require.EqualValues(t, 5, gotPos)
+	})
+
+	t.Run("bufferСontents", func(t *testing.T) {
+		cases := []struct {
+			in      string
+			pattern string
+			// buffer size is equal to the input
+			// NOTE: buffer preparing before call method
+			wantBuf []byte
+			wantErr error
+		}{
+			{
+				"1212",
+				"2",
+				[]byte{0x32, 0x0, 0x0, 0x0},
+				nil,
+			},
+			{
+				"1212",
+				"1",
+				[]byte{0x31, 0x32, 0x0, 0x0},
+				nil,
+			},
+
+			{
+				"1212",
+				"4",
+				[]byte{0x31, 0x32, 0x31, 0x32}, // because the buffer for tail
+				ErrNotFoundPattern,
+			},
+			{
+				"1212",
+				"",
+				[]byte{0x00, 0x00, 0x00, 0x00}, // it is ok, buffer preparing before call method
+				ErrEmptyPattern,
+			},
+			{
+				"",
+				"4",
+				[]byte{}, // because input is empty
+				ErrNotFoundPattern,
+			},
+		}
+
+		for _, tt := range cases {
+			t.Run(tt.in, func(t *testing.T) {
+				r := strings.NewReader(tt.in)
+				buf := make([]byte, r.Size())
+				_, err := lastIndex(r, buf, []byte(tt.pattern))
+				if tt.wantErr == nil {
+					require.NoError(t, err)
+				} else {
+					require.Error(t, err)
+					require.EqualError(t, err, tt.wantErr.Error())
+				}
+				require.EqualValues(t, tt.wantBuf, buf)
+			})
+		}
+	})
 }

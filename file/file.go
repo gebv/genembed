@@ -18,6 +18,7 @@ func OpenFile(filename string) (*File, error) {
 }
 
 // File instance of file.
+// Empowered the file by adding the methods to insert data before or after the pattern.
 type File struct {
 	*os.File
 }
@@ -34,7 +35,7 @@ func (f File) WriteBefore(pattern, dat []byte) (err error) {
 	size := fstat.Size()
 
 	buf := make([]byte, size)
-	pos, err := f.lastIndex(buf, pattern)
+	pos, err := lastIndex(f.File, buf, pattern)
 
 	if err != nil {
 		return err
@@ -58,7 +59,7 @@ func (f File) WriteAfter(pattern, dat []byte) (err error) {
 	size := fstat.Size()
 
 	buf := make([]byte, size)
-	pos, err := f.lastIndex(buf, pattern)
+	pos, err := lastIndex(f.File, buf, pattern)
 
 	if err != nil {
 		return err
@@ -68,9 +69,24 @@ func (f File) WriteAfter(pattern, dat []byte) (err error) {
 	return err
 }
 
+var (
+	// ErrNotFoundPattern is returned when not found pattern (after or before which should be an insert) in file.
+	ErrNotFoundPattern = errors.New("not found pattern")
+
+	// ErrEmptyPattern is returned when invalid pattern.
+	ErrEmptyPattern = errors.New("empty pattern")
+)
+
 // lastIndex returns the value of the start position of the last matched pattern.
 // If not found matched pattern returns position value -1 and error 'not found pattern'.
-func (f File) lastIndex(buf []byte, pattern []byte) (pos int64, err error) {
+//
+// The buffer contains the tail after the found pattern. If not found, the buffer contains a copy of the reader.
+// NOTE: seeker is dropped to os.SEEK_END. Searching from the end every time.
+func lastIndex(f readAtSeeker, buf []byte, pattern []byte) (pos int64, err error) {
+	if len(pattern) == 0 {
+		return -1, ErrEmptyPattern
+	}
+
 	var seek int64 = 0
 	var found bool
 
@@ -105,19 +121,7 @@ func (f File) lastIndex(buf []byte, pattern []byte) (pos int64, err error) {
 	return pos, nil
 }
 
-var (
-	// ErrNotFoundPattern is returned when not found pattern (after or before which should be an insert) in file.
-	ErrNotFoundPattern = errors.New("not found pattern")
-
-	// ErrEmptyPattern is returned when invalid pattern.
-	ErrEmptyPattern = errors.New("empty pattern")
-)
-
-// type file interface {
-// 	io.Seeker
-// 	io.Closer
-// 	io.ReaderAt
-// 	io.WriterAt
-// 	Sync() error
-// 	Close() error
-// }
+type readAtSeeker interface {
+	io.Seeker
+	io.ReaderAt
+}
