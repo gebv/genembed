@@ -481,7 +481,7 @@ func Test_NegativeCases(t *testing.T) {
 		require.EqualError(t, err, ErrNotExistsInputFile.Error())
 	})
 
-	t.Run("openAndProcessDelFile", func(t *testing.T) {
+	t.Run("onFlyRemoveFile", func(t *testing.T) {
 		file, close, remove := tmpFileWith(t, "123")
 		close()
 		defer remove()
@@ -492,13 +492,15 @@ func Test_NegativeCases(t *testing.T) {
 
 		remove()
 
+		requireNotExistsFile(t, file)
+
 		err = f.WriteAfter([]byte("2"), []byte("-"))
 		require.NoError(t, err)
 
 		requireNotExistsFile(t, file)
 	})
 
-	t.Run("nilFile", func(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
 		f := File{nil}
 		err := f.WriteAfter([]byte("2"), []byte("-"))
 		require.EqualError(t, err, ErrInvalid.Error())
@@ -508,6 +510,20 @@ func Test_NegativeCases(t *testing.T) {
 
 		_, err = f.Size()
 		require.EqualError(t, err, ErrInvalid.Error())
+	})
+
+	t.Run("perm", func(t *testing.T) {
+		file, close, remove := tmpFileWith(t, "123")
+		close()
+		defer remove()
+
+		err := os.Chmod(file, 0400)
+		require.NoError(t, err)
+
+		f, err := OpenFile(file)
+		require.Nil(t, f)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "permission denied")
 	})
 
 }
