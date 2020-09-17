@@ -1,6 +1,6 @@
 ---
 codecov:
-  branch: "main"
+  branch: "master"
 
 coverage:
   range: "75...85"
