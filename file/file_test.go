@@ -451,7 +451,7 @@ func TestFile_Size(t *testing.T) {
 
 		f, err := OpenFile(file)
 		require.NoError(t, err)
-		size, err := f.Size()
+		size, err := f.size()
 		require.NoError(t, err)
 		require.EqualValues(t, 0, size)
 	})
@@ -463,7 +463,7 @@ func TestFile_Size(t *testing.T) {
 
 		f, err := OpenFile(file)
 		require.NoError(t, err)
-		size, err := f.Size()
+		size, err := f.size()
 		require.NoError(t, err)
 		require.EqualValues(t, 3, size)
 	})
@@ -508,7 +508,7 @@ func Test_NegativeCases(t *testing.T) {
 		err = f.WriteBefore([]byte("2"), []byte("-"))
 		require.EqualError(t, err, ErrInvalid.Error())
 
-		_, err = f.Size()
+		_, err = f.size()
 		require.EqualError(t, err, ErrInvalid.Error())
 	})
 

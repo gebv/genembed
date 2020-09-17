@@ -31,8 +31,8 @@ type File struct {
 	*os.File
 }
 
-// Size returns actual size of file.
-func (f File) Size() (int64, error) {
+// size returns actual size of file.
+func (f File) size() (int64, error) {
 	if f.File == nil {
 		return -1, ErrInvalid
 	}
@@ -58,7 +58,7 @@ func (f File) WriteBefore(pattern, dat []byte) (err error) {
 	}
 
 	// actual file size
-	asize, err := f.Size()
+	asize, err := f.size()
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (f File) WriteAfter(pattern, dat []byte) (err error) {
 	}
 
 	// actual file size
-	asize, err := f.Size()
+	asize, err := f.size()
 	if err != nil {
 		return err
 	}
