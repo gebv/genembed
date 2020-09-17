@@ -3,7 +3,6 @@ package file
 import (
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -11,66 +10,95 @@ import (
 )
 
 func TestOpenFile(t *testing.T) {
-	_, err := OpenFile("not/eixsts/path/to/file")
-	require.Error(t, err)
-	require.EqualError(t, err, "open not/eixsts/path/to/file: no such file or directory")
+	t.Run("pathNonExistentDir", func(t *testing.T) {
+		file, close, remove := tmpFileWith(t, "abc")
+		close()
+		defer remove()
+
+		_, err := OpenFile(file)
+		require.NoError(t, err)
+	})
+	t.Run("pathNonExistentDir", func(t *testing.T) {
+		_, err := OpenFile("not/eixsts/path/to/file")
+		require.Error(t, err)
+		require.EqualError(t, err, ErrNotExistsInputFile.Error())
+	})
+
 }
 
 func TestWriteBefore(t *testing.T) {
-	dir, err := ioutil.TempDir("", "genembed")
-	require.NoError(t, err)
-
-	file := filepath.Join(dir, "f1")
-	defer os.RemoveAll(dir)
-
 	t.Run("replaceLarge", func(t *testing.T) {
-		prepareFile(t, file, "2")
+		file, close, remove := tmpFileWith(t, "2")
+		close()
+		defer remove()
+
 		err := writeBefore(t, file, "2", "----")
 		require.NoError(t, err)
 		requireEqualFileContent(t, file, "----2")
 	})
 	t.Run("replaceSmall", func(t *testing.T) {
-		prepareFile(t, file, "abc")
+		file, close, remove := tmpFileWith(t, "abc")
+		close()
+		defer remove()
+
 		err := writeBefore(t, file, "b", "-")
 		require.NoError(t, err)
 		requireEqualFileContent(t, file, "a-bc")
 	})
 	t.Run("emptySrc", func(t *testing.T) {
-		prepareFile(t, file, "")
+		file, close, remove := tmpFileWith(t, "")
+		close()
+		defer remove()
+
 		err := writeBefore(t, file, "b", "-")
 		require.Error(t, err)
 		require.EqualError(t, err, ErrNotFoundPattern.Error())
 		requireEqualFileContent(t, file, "")
 	})
 	t.Run("emptyPattern", func(t *testing.T) {
-		prepareFile(t, file, "abc")
+		file, close, remove := tmpFileWith(t, "abc")
+		close()
+		defer remove()
+
 		err := writeBefore(t, file, "", "-")
 		require.Error(t, err)
 		require.EqualError(t, err, ErrEmptyPattern.Error())
 		requireEqualFileContent(t, file, "abc")
 	})
 	t.Run("emptyReplace", func(t *testing.T) {
-		prepareFile(t, file, "abc")
+		file, close, remove := tmpFileWith(t, "abc")
+		close()
+		defer remove()
+
 		err := writeBefore(t, file, "b", "")
 		require.NoError(t, err)
 		requireEqualFileContent(t, file, "abc")
 	})
 	t.Run("emptyReplaceBoth", func(t *testing.T) {
-		prepareFile(t, file, "abc")
+		file, close, remove := tmpFileWith(t, "abc")
+		close()
+		defer remove()
+
 		err := writeBefore(t, file, "", "")
 		require.Error(t, err)
 		require.EqualError(t, err, ErrEmptyPattern.Error())
 		requireEqualFileContent(t, file, "abc")
 	})
 	t.Run("allEmpty", func(t *testing.T) {
-		prepareFile(t, file, "")
+		file, close, remove := tmpFileWith(t, "")
+		close()
+		defer remove()
+
 		err := writeBefore(t, file, "", "")
 		require.Error(t, err)
 		require.EqualError(t, err, ErrEmptyPattern.Error())
 		requireEqualFileContent(t, file, "")
 	})
 	t.Run("patternMoreSrc", func(t *testing.T) {
-		prepareFile(t, file, "abc")
+		file, close, remove := tmpFileWith(t, "abc")
+		close()
+		defer remove()
+
 		err := writeBefore(t, file, "bbbbbbb", "c")
 		require.Error(t, err)
 		require.EqualError(t, err, ErrNotFoundPattern.Error())
@@ -78,7 +106,10 @@ func TestWriteBefore(t *testing.T) {
 	})
 
 	t.Run("wultipleWrite", func(t *testing.T) {
-		prepareFile(t, file, "abc")
+		file, close, remove := tmpFileWith(t, "abc")
+		close()
+		defer remove()
+
 		f, err := OpenFile(file)
 		if err != nil {
 			t.Error(err, "failed open file")
@@ -87,12 +118,16 @@ func TestWriteBefore(t *testing.T) {
 
 		err = f.WriteBefore([]byte("b"), []byte("-"))
 		require.NoError(t, err)
+
 		err = f.WriteBefore([]byte("b"), []byte("-"))
 		require.NoError(t, err)
+
 		err = f.WriteBefore([]byte("a"), []byte("-"))
 		require.NoError(t, err)
+
 		err = f.WriteBefore([]byte("c"), []byte("-"))
 		require.NoError(t, err)
+
 		err = f.WriteBefore([]byte("b"), []byte("-"))
 		require.NoError(t, err)
 
@@ -101,62 +136,79 @@ func TestWriteBefore(t *testing.T) {
 }
 
 func TestWriteAfter(t *testing.T) {
-	dir, err := ioutil.TempDir("", "genembed")
-	if err != nil {
-		t.Error(err)
-	}
-
-	file := filepath.Join(dir, "f1")
-	defer os.RemoveAll(dir)
 
 	t.Run("replaceLarge", func(t *testing.T) {
-		prepareFile(t, file, "2")
+		file, close, remove := tmpFileWith(t, "2")
+		close()
+		defer remove()
+
 		err := writeAfter(t, file, "2", "----")
 		require.NoError(t, err)
 		requireEqualFileContent(t, file, "2----")
 	})
 	t.Run("replaceSmall", func(t *testing.T) {
-		prepareFile(t, file, "abc")
+		file, close, remove := tmpFileWith(t, "abc")
+		close()
+		defer remove()
+
 		err := writeAfter(t, file, "b", "-")
 		require.NoError(t, err)
 		requireEqualFileContent(t, file, "ab-c")
 	})
 	t.Run("emptySrc", func(t *testing.T) {
-		prepareFile(t, file, "")
+		file, close, remove := tmpFileWith(t, "")
+		close()
+		defer remove()
+
 		err := writeAfter(t, file, "b", "-")
 		require.Error(t, err)
 		require.EqualError(t, err, ErrNotFoundPattern.Error())
 		requireEqualFileContent(t, file, "")
 	})
 	t.Run("emptyPattern", func(t *testing.T) {
-		prepareFile(t, file, "abc")
+		file, close, remove := tmpFileWith(t, "abc")
+		close()
+		defer remove()
+
 		err := writeAfter(t, file, "", "-")
 		require.Error(t, err)
 		require.EqualError(t, err, ErrEmptyPattern.Error())
 		requireEqualFileContent(t, file, "abc")
 	})
 	t.Run("emptyReplace", func(t *testing.T) {
-		prepareFile(t, file, "abc")
+		file, close, remove := tmpFileWith(t, "abc")
+		close()
+		defer remove()
+
 		err := writeAfter(t, file, "b", "")
 		require.NoError(t, err)
 		requireEqualFileContent(t, file, "abc")
 	})
 	t.Run("emptyReplaceBoth", func(t *testing.T) {
-		prepareFile(t, file, "abc")
+		file, close, remove := tmpFileWith(t, "abc")
+		close()
+		defer remove()
+
 		err := writeAfter(t, file, "", "")
 		require.Error(t, err)
 		require.EqualError(t, err, ErrEmptyPattern.Error())
 		requireEqualFileContent(t, file, "abc")
 	})
 	t.Run("allEmpty", func(t *testing.T) {
-		prepareFile(t, file, "")
+		file, close, remove := tmpFileWith(t, "")
+		close()
+		defer remove()
+
 		err := writeAfter(t, file, "", "")
 		require.Error(t, err)
 		require.EqualError(t, err, ErrEmptyPattern.Error())
 		requireEqualFileContent(t, file, "")
 	})
 	t.Run("patternMoreSrc", func(t *testing.T) {
-		prepareFile(t, file, "abc")
+		file, close, remove := tmpFileWith(t, "abc")
+		close()
+		defer remove()
+
 		err := writeAfter(t, file, "bbbbbbb", "c")
 		require.Error(t, err)
 		require.EqualError(t, err, ErrNotFoundPattern.Error())
@@ -164,7 +216,10 @@ func TestWriteAfter(t *testing.T) {
 	})
 
 	t.Run("wultipleWrite", func(t *testing.T) {
-		prepareFile(t, file, "abc")
+		file, close, remove := tmpFileWith(t, "abc")
+		close()
+		defer remove()
+
 		f, err := OpenFile(file)
 		if err != nil {
 			t.Error(err, "failed open file")
@@ -186,10 +241,21 @@ func TestWriteAfter(t *testing.T) {
 	})
 }
 
-func prepareFile(t *testing.T, filename string, dat string) {
+func tmpFileWith(t *testing.T, dat string) (filename string, closeFn func(), removeFn func()) {
 	t.Helper()
-	err := ioutil.WriteFile(filename, []byte(dat), 0666)
+
+	tmpFile, err := ioutil.TempFile("", "embeded")
 	require.NoError(t, err)
+	n, err := tmpFile.WriteString(dat)
+	require.NoError(t, err)
+	require.Len(t, dat, n)
+
+	return tmpFile.Name(),
+		func() {
+			tmpFile.Close()
+		}, func() {
+			os.RemoveAll(tmpFile.Name())
+		}
 }
 
 func writeAfter(t *testing.T, filename string, pattern, dat string) error {
@@ -215,6 +281,12 @@ func requireEqualFileContent(t *testing.T, filename string, want string) {
 	got, err := ioutil.ReadFile(filename)
 	require.NoError(t, err)
 	require.EqualValues(t, []byte(want), got)
+}
+
+func requireNotExistsFile(t *testing.T, filename string) {
+	t.Helper()
+	_, err := os.Stat(filename)
+	require.True(t, os.IsNotExist(err))
 }
 
 func Test_lastIndex(t *testing.T) {
@@ -369,4 +441,73 @@ func Test_lastIndex_SpecialCases(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestFile_Size(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		file, close, remove := tmpFileWith(t, "")
+		close()
+		defer remove()
+
+		f, err := OpenFile(file)
+		require.NoError(t, err)
+		size, err := f.Size()
+		require.NoError(t, err)
+		require.EqualValues(t, 0, size)
+	})
+
+	t.Run("ok", func(t *testing.T) {
+		file, close, remove := tmpFileWith(t, "123")
+		close()
+		defer remove()
+
+		f, err := OpenFile(file)
+		require.NoError(t, err)
+		size, err := f.Size()
+		require.NoError(t, err)
+		require.EqualValues(t, 3, size)
+	})
+}
+
+func Test_NegativeCases(t *testing.T) {
+	t.Run("openNotExistsFile", func(t *testing.T) {
+		file, close, remove := tmpFileWith(t, "123")
+		close()
+		remove()
+
+		f, err := OpenFile(file)
+		require.Nil(t, f)
+		require.Error(t, err)
+		require.EqualError(t, err, ErrNotExistsInputFile.Error())
+	})
+
+	t.Run("openAndProcessDelFile", func(t *testing.T) {
+		file, close, remove := tmpFileWith(t, "123")
+		close()
+		defer remove()
+
+		f, err := OpenFile(file)
+		require.NoError(t, err)
+		require.NotEmpty(t, f)
+
+		remove()
+
+		err = f.WriteAfter([]byte("2"), []byte("-"))
+		require.NoError(t, err)
+
+		requireNotExistsFile(t, file)
+	})
+
+	t.Run("nilFile", func(t *testing.T) {
+		f := File{nil}
+		err := f.WriteAfter([]byte("2"), []byte("-"))
+		require.EqualError(t, err, ErrInvalid.Error())
+
+		err = f.WriteBefore([]byte("2"), []byte("-"))
+		require.EqualError(t, err, ErrInvalid.Error())
+
+		_, err = f.Size()
+		require.EqualError(t, err, ErrInvalid.Error())
+	})
+
 }

@@ -10,6 +10,14 @@ import (
 
 // OpenFile opens and returns a file instance.
 func OpenFile(filename string) (*File, error) {
+	_, err := os.Stat(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrNotExistsInputFile
+		}
+		return nil, err
+	}
+
 	f, err := os.OpenFile(filename, syscall.O_CREAT|syscall.O_RDWR, 0666)
 	if err != nil {
 		return nil, err
@@ -23,25 +31,46 @@ type File struct {
 	*os.File
 }
 
+// Size returns actual size of file.
+func (f File) Size() (int64, error) {
+	if f.File == nil {
+		return -1, ErrInvalid
+	}
+
+	fstat, err := f.Stat()
+	if err != nil {
+		if os.IsNotExist(err) {
+			return -1, ErrNotExistsInputFile
+		}
+		return -1, err
+	}
+	return fstat.Size(), nil
+}
+
 // WriteBefore writes data before the pattern if it was found in the file.
 func (f File) WriteBefore(pattern, dat []byte) (err error) {
+	if f.File == nil {
+		return ErrInvalid
+	}
+
 	if len(pattern) == 0 {
 		return ErrEmptyPattern
 	}
-	fstat, err := f.Stat()
+
+	// actual file size
+	asize, err := f.Size()
 	if err != nil {
 		return err
 	}
-	size := fstat.Size()
 
-	buf := make([]byte, size)
+	buf := make([]byte, asize)
 	pos, err := lastIndex(f.File, buf, pattern)
 
 	if err != nil {
 		return err
 	}
 
-	_, err = f.WriteAt(append(dat, buf[:size-pos]...), pos)
+	_, err = f.WriteAt(append(dat, buf[:asize-pos]...), pos)
 	return err
 }
 
@@ -49,23 +78,28 @@ func (f File) WriteBefore(pattern, dat []byte) (err error) {
 //
 // NOTE: move starts from the end.
 func (f File) WriteAfter(pattern, dat []byte) (err error) {
+	if f.File == nil {
+		return ErrInvalid
+	}
+
 	if len(pattern) == 0 {
 		return ErrEmptyPattern
 	}
-	fstat, err := f.Stat()
+
+	// actual file size
+	asize, err := f.Size()
 	if err != nil {
 		return err
 	}
-	size := fstat.Size()
 
-	buf := make([]byte, size)
+	buf := make([]byte, asize)
 	pos, err := lastIndex(f.File, buf, pattern)
 
 	if err != nil {
 		return err
 	}
 
-	_, err = f.WriteAt(append(dat, buf[len(pattern):size-pos]...), pos+int64(len(pattern)))
+	_, err = f.WriteAt(append(dat, buf[len(pattern):asize-pos]...), pos+int64(len(pattern)))
 	return err
 }
 
@@ -75,6 +109,12 @@ var (
 
 	// ErrEmptyPattern is returned when invalid pattern.
 	ErrEmptyPattern = errors.New("empty pattern")
+
+	// ErrNotExistsInputFile is returned when not exists input file.
+	ErrNotExistsInputFile = errors.New("not exsits input file")
+
+	// ErrInvalid indicates an invalid file.
+	ErrInvalid = errors.New("invalid arguments")
 )
 
 // lastIndex returns the value of the start position of the last matched pattern.
