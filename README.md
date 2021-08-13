@@ -1,3 +1,5 @@
+**archived: with go 1.16 and later versions it's works out of the box**
+
 # genembed
 
 ![GitHub](https://img.shields.io/github/license/gebv/genembed)
